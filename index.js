@@ -24,17 +24,17 @@ const OPTION_DEFINITIONS = [
 async function run() {
   const options = commandLineArgs(OPTION_DEFINITIONS);
 
-  const key = options.key || env.DEEPL_API_KEY;
+  const apiKey = options.key || env.DEEPL_API_KEY;
   const input = options.input || getHtmlFileInFolder();
   let output = options.output;
   const source = options.source;
   const target = options.target || 'FR';
-  const formality = options.formal ? 'more' : 'less';
   const logDebug = options.debug;
   const freeApi = options.free || false;
   const displayUsageLimit = options.usagelimit;
+  const apiUrl = freeApi ? DEEPL_FREE_API_URL : DEEPL_API_URL;
 
-  if (!key) throw new Error('Specify a DeepL API key as DEEPL_API_KEY environment variable, or using the --key or -k parameter.')
+  if (!apiKey) throw new Error('Specify a DeepL API key as DEEPL_API_KEY environment variable, or using the --key or -k parameter.')
   if (!input) throw new Error('At least specify input file with --input or -i.');
 
   if (!output) output = input.split('.').slice(0, -1).join('.') + '.' + target.toLowerCase() + '.html';
@@ -43,7 +43,6 @@ async function run() {
   log('Output file:', output);
   log('Source language:', source || 'Auto detect');
   log('Target language:', target);
-  log('Formality:', formality);
   log('Show debug:', logDebug);
 
   const formData = new FormData();
@@ -51,58 +50,82 @@ async function run() {
   formData.append('file', fs.createReadStream('./' + input));
   formData.append('filename', input);
 
-  formData.append('auth_key', key);
+  formData.append('auth_key', apiKey);
   if (source) formData.append('source_lang', source);
   formData.append('target_lang', target);
   formData.append('split_sentences', 0);
-  formData.append('formality', formality);
 
   log('Uploading file...');
 
-  axios.default.post(freeApi ? DEEPL_FREE_API_URL : DEEPL_API_URL + 'document', formData, { headers: formData.getHeaders() })
-    .then((response) => {
-      if (response.status !== 200) {
-        console.error('Request to DeepL failed', response);
-        throw new Error(response);
-      } else {
-        const documentId = response.document_id;
-        const documentKey = response.document_key;
+  try
+  {
+    const response = await axios.default.post(apiUrl + 'document', formData, { headers: formData.getHeaders() });
+    
+    if (response.status !== 200) {
+      console.error('Request to DeepL failed', response);
+      throw new Error(response);
+    } else {
+      const documentId = response.data.document_id;
+      const documentKey = response.data.document_key;
 
-        debug(documentId, documentKey);
+      if (logDebug) debug(documentId, documentKey);
 
-        log('File uploaded, waiting until processed...');
-        
-        let status = 'queued';
+      log('File uploaded, waiting until processed...');
+      
+      let status = 'queued';
+      let secondsRemaining = -1;
 
-        while (status === 'queued' || status === 'translating') {
+      while (status === 'queued' || status === 'translating') {
+        const result = await checkProcessingStatus(documentId, documentKey, apiUrl, apiKey);
+        status = result.status;
+        secondsRemaining = result.secondsRemaining;
 
+        if (secondsRemaining > 0) {
+          log('Seconds remaining: ', secondsRemaining);
         }
 
-        log('Finished.');
+        await new Promise(r => setTimeout(r, (secondsRemaining || 1) * 1000));
+      }
 
-        if (displayUsageLimit) {
-          log('Requesting usage limit...');
-          axios.default.get(DEEPL_API_URL + 'usage', {params: { 'auth_key': key }})
-          .then((response) => {
-            if (response.status !== 200) {
-              console.error('Request to DeepL failed', response);
-            } else {
-              log('Usage:', response.data.character_count + '/' + response.data.character_limit,
-                Math.round(response.data.character_count / response.data.character_limit * 100) + '%');
-            }
-          }).catch((err) => { 
-            console.error('Error retrieving usage limit', err);
-            throw new Error(err);
-          });
+      log ('Downloading translated file...');
+
+      const fileBinaryData = await axios.default.post(apiUrl + 'document/' + documentId + '/result', null,
+        { params: { 'auth_key': apiKey, 'document_key': documentKey }, responseType: 'blob' });
+
+      fs.writeFileSync(output, fileBinaryData.data);
+
+      log('Finished.');
+
+      if (displayUsageLimit) {
+        log('Requesting usage limit...');
+
+        const usageResponse = await axios.default.get(apiUrl + 'usage', {params: { 'auth_key': apiKey }});
+
+        if (usageResponse.status !== 200) {
+          console.error('Request to DeepL failed', usageResponse);
+        } else {
+          log('Usage:', usageResponse.data.character_count + '/' + usageResponse.data.character_limit,
+            Math.round(usageResponse.data.character_count / usageResponse.data.character_limit * 100) + '%');
         }
       }
-    })
-    .catch((err) => { 
-      console.error('Translation failed', err);
-      throw new Error(err);
-    });
+    }
+  } catch (err) { 
+    console.error('Translation failed', err);
+    throw new Error(err);
+  };
 }
 
+async function checkProcessingStatus(documentId, documentKey, apiUrl, apiKey) {
+  try {
+    const result = await axios.default.get(apiUrl + 'document/' + documentId,
+      { params: { 'auth_key': apiKey, 'document_key': documentKey } });
+
+    return result.data;
+  } catch(err) { 
+    console.error('Error retrieving progress', err);
+    throw new Error(err);
+  };
+}
 
 function getHtmlFileInFolder() {
   const files = fs.readdirSync('.');
@@ -123,3 +146,5 @@ function log(...args) {
 function debug(...args) {
   if (logDebug) console.log(...args);
 }
+
+run();

@@ -1,6 +1,6 @@
-# DeepL json translator
+# DeepL html document translator
 
-Node.js CLI tool to translate documents using the DeepL API. Requires a [DeepL API key](https://www.deepl.com/nl/docs-api/).
+Node.js CLI tool to translate html documents using the DeepL API. Requires a [DeepL API key](https://www.deepl.com/nl/docs-api/).
 
 ## Installation
 
@@ -18,6 +18,5 @@ Node.js CLI tool to translate documents using the DeepL API. Requires a [DeepL A
 - **--target** / **-t**: The target language. One of the [DeepL language strings](https://www.deepl.com/docs-api/translating-text/request/). Default FR.
 - **--key** / **-k**: Your DeepL API key. Can also be set as environment variable `DEEPL_API_KEY`.
 - **--free** / **-r**: Whether it is a 'free' DeepL API key. Default false.
-- **--formal** / **-f**: Flag. DeepL setting: prefer formal language. Default false.
 - **--debug** / **-d**: Flag. Also log debug statements. Default false.
 - **--usagelimit** / **-u**: Flag. Display your DeepL API key's usage limit after use.
