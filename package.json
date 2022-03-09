@@ -1,0 +1,20 @@
+{
+  "name": "deepl-json",
+  "version": "1.0.0",
+  "description": "Translate json using the DeepL API",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [
+    "deepl",
+    "json",
+    "translate",
+    "map"
+  ],
+  "author": "Vincent Sels",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^14.11.8",
+    "axios": "^0.20.0",
+    "command-line-args": "^5.1.1"
+  }
+}
