@@ -1,3 +1,7 @@
 node_modules
-*.json
-!package.json
+*.html
+*.htm
+*.docx
+*.pptx
+*.txt
+*.pdf

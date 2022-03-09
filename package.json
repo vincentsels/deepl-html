@@ -1,12 +1,14 @@
 {
-  "name": "deepl-json",
+  "name": "deepl-doc",
   "version": "1.0.0",
-  "description": "Translate json using the DeepL API",
+  "description": "Translate docs using the DeepL API",
   "main": "index.js",
   "scripts": {},
   "keywords": [
     "deepl",
-    "json",
+    "documents",
+    "html",
+    "htm",
     "translate",
     "map"
   ],
