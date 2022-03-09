@@ -28,7 +28,7 @@ async function run() {
   const input = options.input || getHtmlFileInFolder();
   let output = options.output;
   const source = options.source;
-  const target = options.target || 'FR';
+  const target = options.target || 'EN';
   const logDebug = options.debug;
   const freeApi = options.free || false;
   const displayUsageLimit = options.usagelimit;

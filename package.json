@@ -1,7 +1,7 @@
 {
-  "name": "deepl-doc",
+  "name": "deepl-html",
   "version": "1.0.0",
-  "description": "Translate docs using the DeepL API",
+  "description": "Translate html docs using the DeepL API",
   "main": "index.js",
   "scripts": {},
   "keywords": [
